@@ -1,9 +1,11 @@
-import FormPage from "./components/FormComponent";
+import { useState } from "react";
+import FormPage from "./pages/FormPage";
 
 function App() {
+  const [selectedPage, setSelectedPage] = useState("dashboard");
   return (
     <>
-      <FormPage />
+      <FormPage selectedPage={selectedPage} setSelectedPage={setSelectedPage} />
     </>
   );
 }

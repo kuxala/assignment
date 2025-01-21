@@ -31,14 +31,14 @@ router.get('/cities', (req: Request, res: Response) => {
 });
 
 // Route to get schools based on city ID
-router.get('/schools', (req:any, res: any) => { //____________________change this types later_________
+// Backend route
+router.get('/schools', (req: any, res: any) => { 
   const cityId = req.query.cityId as string;
 
   if (!cityId) {
     return res.status(400).json({ error: 'cityId is required' });
   }
 
-  // Select appropriate data based on cityId
   let schools;
   if (cityId === '1') schools = schools1;
   else if (cityId === '2') schools = schools2;
@@ -46,6 +46,7 @@ router.get('/schools', (req:any, res: any) => { //____________________change thi
 
   res.json(schools);
 });
+
 
 // Route to get form structure
 router.get('/form', (req: Request, res: Response) => {
