@@ -1,0 +1,105 @@
+[
+    {
+      "title": "Step 1",
+      "fields": [
+        {
+          "prop": "name",
+          "label": "First name",
+          "placeholder": "Example: Elon",
+          "type": "input",
+          "validation": {
+            "type": "string",
+            "minLength": 2,
+            "required": true
+          }
+        },
+        {
+          "prop": "surname",
+          "label": "Last name",
+          "placeholder": "Example: Musk",
+          "type": "input",
+          "validation": { "type": "string", "minLength": 2 }
+        },
+        {
+          "prop": "city",
+          "label": "City",
+          "placeholder": "Choose city",
+          "type": "select",
+          "collection": "cities",
+          "allowCustomInput": false,
+          "validation": { "type": "number", "required": true }
+        },
+        {
+          "prop": "school",
+          "label": "School",
+          "placeholder": "Choose school",
+          "type": "select",
+          "collection": "schools",
+          "allowCustomInput": true,
+          "customInputOption": "My school isn't in the list",
+          "validation": { "type": "number", "required": true },
+          "customInput": {
+            "label": "Name",
+            "placeholder": "enter here",
+            "validation": {
+              "type": "string",
+              "minLength": 1,
+              "required": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Step 2",
+      "fields": [
+        {
+          "prop": "age",
+          "label": "Age",
+          "placeholder": "Example: 18",
+          "type": "input",
+          "subType": "number",
+          "validation": { "type": "number", "min": 18 }
+        },
+        {
+          "prop": "mail",
+          "label": "E-mail",
+          "placeholder": "example@gmail.com",
+          "type": "input",
+          "subType": "email",
+          "validation": { "type": "email", "required": true }
+        },
+        {
+          "prop": "password",
+          "label": "Password",
+          "placeholder": "",
+          "type": "input",
+          "subType": "password",
+          "validation": {
+            "type": "string",
+            "minLength": 8,
+            "required": true
+          }
+        },
+        {
+          "prop": "password",
+          "label": "Password",
+          "placeholder": "",
+          "type": "input",
+          "subType": "password",
+          "validation": { "type": "number", "min": 18, "required": true }
+        },
+        {
+          "prop": "termsAndConditions",
+          "label": "I agree to the terms and conditions",
+          "placeholder": "",
+          "type": "checkbox",
+          "validation": {
+            "type": "boolean",
+            "validValues": [true],
+            "required": true
+          }
+        }
+      ]
+    }
+  ]
