@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import FormSidebar from "../components/FormSidebar";
 import FormContent from "../components/FormContent";
+import { Toaster } from "react-hot-toast";
 
 type Field = {
   prop: string;
@@ -70,6 +71,7 @@ export default function FormPage() {
 
   return (
     <div className="flex bg-[#f0f2f5] max-w-[1920px] mx-auto min-h-screen">
+      <Toaster />
       <FormSidebar
         steps={formStructure || []}
         selectedStep={selectedStep}

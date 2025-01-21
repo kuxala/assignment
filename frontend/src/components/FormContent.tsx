@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import toast from "react-hot-toast";
 
 type City = {
   id: string;
@@ -61,14 +62,34 @@ export default function FormContent({
     control,
     handleSubmit,
     formState: { errors },
-    getValues,
+    setValue,
   } = useForm();
 
   const [formData, setFormData] = useState<Record<string, any>>({});
 
+  useEffect(() => {
+    // Check if there's any saved form data in localStorage
+    const savedFormData = localStorage.getItem("formData");
+    if (savedFormData) {
+      const parsedData = JSON.parse(savedFormData);
+      setFormData(parsedData);
+
+      // Pre-fill form fields from saved data
+      Object.keys(parsedData).forEach((key) => {
+        setValue(key, parsedData[key]);
+      });
+    }
+  }, [setValue]);
+
   const onSubmit: SubmitHandler<any> = (data) => {
     const currentData = { ...data };
     setFormData((prev) => ({ ...prev, ...currentData }));
+
+    // Save the current form data to localStorage
+    localStorage.setItem(
+      "formData",
+      JSON.stringify({ ...formData, ...currentData })
+    );
 
     if (selectedStep === formStructure.length - 1) {
       // Submit all data to the backend
@@ -112,15 +133,17 @@ export default function FormContent({
       const result = await response.json();
 
       if (response.ok) {
-        alert("Form submitted successfully!");
+        toast.success("Form submitted successfully!");
         console.log("Backend response:", result);
+        // Clear the form data from localStorage after successful submission
+        localStorage.removeItem("formData");
       } else {
         console.error("Backend validation errors:", result.errors);
-        alert("Submission failed: " + JSON.stringify(result.errors));
+        toast.error("Submission failed: " + JSON.stringify(result.errors));
       }
     } catch (error) {
       console.error("Error during form submission:", error);
-      alert("An error occurred while submitting the form.");
+      toast.error("An error occurred while submitting the form.");
     }
   };
 
