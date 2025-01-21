@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import FormSidebar from "../components/FormSidebar";
 import FormContent from "../components/FormContent";
 
-// Type for form structure from the backend
 type Field = {
   prop: string;
   label: string;
@@ -39,11 +38,11 @@ export default function FormPage() {
   const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [selectedCity, setSelectedCity] = useState<string>("");
-  const [selectedSchool, setSelectedSchool] = useState<string>(""); // Added state for selected school
+  const [selectedSchool, setSelectedSchool] = useState<string>("");
 
   // Fetch form data from the backend
   useEffect(() => {
-    fetch("http://localhost:5000/api/form") // Change URL based on actual backend
+    fetch("http://localhost:5000/api/form")
       .then((response) => response.json())
       .then((data) => setFormStructure(data))
       .catch((err) => console.error(err));
@@ -64,6 +63,10 @@ export default function FormPage() {
         .catch((err) => console.error(err));
     }
   }, [selectedCity]);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/submit");
+  }, []);
 
   return (
     <div className="flex bg-[#f0f2f5] max-w-[1920px] mx-auto min-h-screen">

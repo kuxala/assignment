@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 
-// Types for City and School
 type City = {
   id: string;
   name: string;
@@ -12,7 +11,6 @@ type School = {
   name: string;
 };
 
-// Field structure type
 type Field = {
   prop: string;
   label: string;
@@ -26,19 +24,9 @@ type Field = {
     min?: number;
     validValues?: boolean[];
   };
-  collection?: string; // For select options
-  customInput?: {
-    label: string;
-    placeholder: string;
-    validation: {
-      type: string;
-      minLength?: number;
-      required: boolean;
-    };
-  };
+  collection?: string;
 };
 
-// Step type
 type Step = {
   title: string;
   fields: Field[];
@@ -47,8 +35,8 @@ type Step = {
 interface FormContentProps {
   step: Step | null;
   onNextStep: () => void;
-  cities: City[]; // Updated to reflect correct type
-  schools: School[]; // Updated to reflect correct type
+  cities: City[];
+  schools: School[];
   selectedCity: string;
   setSelectedCity: React.Dispatch<React.SetStateAction<string>>;
   selectedSchool: string;
@@ -62,9 +50,9 @@ export default function FormContent({
   onNextStep,
   cities,
   schools,
-  selectedSchool,
   selectedCity,
   setSelectedCity,
+  selectedSchool,
   setSelectedSchool,
   selectedStep,
   formStructure,
@@ -73,31 +61,71 @@ export default function FormContent({
     control,
     handleSubmit,
     formState: { errors },
+    getValues,
   } = useForm();
 
-  // Handle form submission
-  const onSubmit: SubmitHandler<any> = (data) => {
-    console.log("Form submitted with data: ", data); // Log submitted data
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
-    // Check selected city and school
-    console.log("Selected City before submit: ", selectedCity);
-    console.log(
-      "Selected School before submit: ",
-      selectedCity ? selectedSchool : "N/A"
-    );
+  const onSubmit: SubmitHandler<any> = (data) => {
+    const currentData = { ...data };
+    setFormData((prev) => ({ ...prev, ...currentData }));
 
     if (selectedStep === formStructure.length - 1) {
-      // Handle form submission
-      console.log("Form submitted", data);
+      // Submit all data to the backend
+      handleFinalSubmit({ ...formData, ...currentData });
     } else {
-      onNextStep(); // Move to the next step after successful form submission
+      // Proceed to the next step
+      onNextStep();
+    }
+  };
+
+  const handleFinalSubmit = async (data: Record<string, any>) => {
+    // Convert string fields to numbers before submitting
+    const convertedData = Object.keys(data).reduce((acc, key) => {
+      const value = data[key];
+
+      // Skip conversion for termsAndConditions field (boolean value)
+      if (key === "termsAndConditions") {
+        acc[key] = value;
+      }
+      // Check if the value can be converted to a number and convert it
+      else if (!isNaN(value) && value !== "") {
+        acc[key] = parseFloat(value); // Use parseInt for integers if needed
+      } else {
+        acc[key] = value; // Keep the value as is if it cannot be converted
+      }
+
+      return acc;
+    }, {} as Record<string, any>);
+
+    console.log("Submitting final data to backend:", convertedData);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(convertedData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Form submitted successfully!");
+        console.log("Backend response:", result);
+      } else {
+        console.error("Backend validation errors:", result.errors);
+        alert("Submission failed: " + JSON.stringify(result.errors));
+      }
+    } catch (error) {
+      console.error("Error during form submission:", error);
+      alert("An error occurred while submitting the form.");
     }
   };
 
   useEffect(() => {
-    // Reset the selected school whenever the city changes
     setSelectedSchool("");
-    console.log("City changed, resetting school. Selected city:", selectedCity);
   }, [selectedCity, setSelectedSchool]);
 
   return (
@@ -107,12 +135,10 @@ export default function FormContent({
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
           {step.fields.map((field) => (
             <div key={field.prop} className="mb-4">
-              {/* Render label for non-checkbox fields */}
               {field.type !== "checkbox" && (
                 <label className="block">{field.label}</label>
               )}
 
-              {/* Handle input fields */}
               {field.type === "input" && (
                 <Controller
                   name={field.prop}
@@ -129,7 +155,6 @@ export default function FormContent({
                 />
               )}
 
-              {/* Handle city select */}
               {field.type === "select" && field.prop === "city" && (
                 <Controller
                   name={field.prop}
@@ -139,10 +164,10 @@ export default function FormContent({
                     <select
                       {...field}
                       className="border p-2 w-full"
-                      value={selectedCity} // Sync the selected city
+                      value={selectedCity}
                       onChange={(e) => {
                         field.onChange(e);
-                        setSelectedCity(e.target.value); // Update the selected city
+                        setSelectedCity(e.target.value);
                       }}
                     >
                       <option value="">
@@ -159,7 +184,6 @@ export default function FormContent({
                 />
               )}
 
-              {/* Handle school select */}
               {field.type === "select" && field.prop === "school" && (
                 <Controller
                   name={field.prop}
@@ -169,10 +193,10 @@ export default function FormContent({
                     <select
                       {...field}
                       className="border p-2 w-full"
-                      value={selectedCity ? selectedSchool : ""} // Sync with school selection
+                      value={selectedCity ? selectedSchool : ""}
                       onChange={(e) => {
                         field.onChange(e);
-                        setSelectedSchool(e.target.value); // Update the selected school
+                        setSelectedSchool(e.target.value);
                       }}
                     >
                       <option value="">
@@ -189,13 +213,12 @@ export default function FormContent({
                 />
               )}
 
-              {/* Handle Terms and Conditions checkbox */}
               {field.type === "checkbox" &&
                 field.prop === "termsAndConditions" && (
                   <Controller
                     name={field.prop}
                     control={control}
-                    rules={{ required: true }} // Making it required
+                    rules={{ required: true }}
                     render={({ field: controllerField }) => (
                       <div className="flex items-center">
                         <input
@@ -210,7 +233,6 @@ export default function FormContent({
                   />
                 )}
 
-              {/* Display error if field validation fails */}
               {errors[field.prop] && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
               )}
