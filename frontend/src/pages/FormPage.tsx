@@ -36,15 +36,10 @@ type Step = {
 export default function FormPage() {
   const [formStructure, setFormStructure] = useState<Step[] | null>(null);
   const [selectedStep, setSelectedStep] = useState<number>(0);
-
-  // Cities and Schools state
   const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedSchool, setSelectedSchool] = useState<string>(""); // Added state for selected school
-
-  console.log("Cities: ", cities);
-  console.log("Schools: ", schools);
 
   // Fetch form data from the backend
   useEffect(() => {
@@ -72,16 +67,22 @@ export default function FormPage() {
 
   return (
     <div className="flex bg-[#f0f2f5] max-w-[1920px] mx-auto min-h-screen">
-      <FormSidebar steps={formStructure || []} selectedStep={selectedStep} />
+      <FormSidebar
+        steps={formStructure || []}
+        selectedStep={selectedStep}
+        setSelectedStep={setSelectedStep}
+      />
       <FormContent
         step={formStructure ? formStructure[selectedStep] : null}
         cities={cities}
         schools={schools}
         selectedCity={selectedCity}
         setSelectedCity={setSelectedCity}
-        selectedSchool={selectedSchool} // Pass selected school to FormContent
-        setSelectedSchool={setSelectedSchool} // Pass setter for selected school to FormContent
+        selectedSchool={selectedSchool}
+        setSelectedSchool={setSelectedSchool}
         onNextStep={() => setSelectedStep((prev) => prev + 1)}
+        selectedStep={selectedStep}
+        formStructure={formStructure || []}
       />
     </div>
   );
