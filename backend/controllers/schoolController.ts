@@ -1,5 +1,5 @@
-import schools1 from '../schools-1.json';
-import schools2 from '../schools-2.json';
+import schools1 from '../data/schools-1.json';
+import schools2 from '../data/schools-2.json';
 
 // Define the function with proper types for Request and Response
 export const getSchools = (req: { query: { cityId: string } }, res: { json: (data: any) => void, status: (code: number) => { json: (data: any) => void } }): void => {
