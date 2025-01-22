@@ -44,6 +44,7 @@ interface FormContentProps {
   setSelectedSchool: React.Dispatch<React.SetStateAction<string>>;
   selectedStep: number;
   formStructure: Step[];
+  setIsSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function FormContent({
@@ -57,6 +58,7 @@ export default function FormContent({
   setSelectedSchool,
   selectedStep,
   formStructure,
+  setIsSubmitted,
 }: FormContentProps) {
   const {
     control,
@@ -135,7 +137,7 @@ export default function FormContent({
       if (response.ok) {
         toast.success("Form submitted successfully!");
         console.log("Backend response:", result);
-        // Clear the form data from localStorage after successful submission
+        setIsSubmitted(true);
         localStorage.removeItem("formData");
       } else {
         console.error("Backend validation errors:", result.errors);
