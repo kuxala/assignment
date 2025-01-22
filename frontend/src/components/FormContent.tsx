@@ -66,7 +66,7 @@ export default function FormContent({
   } = useForm();
 
   const [formData, setFormData] = useState<Record<string, any>>({});
-
+  console.log("Data sent to backend: ", formData);
   useEffect(() => {
     // Check if there's any saved form data in localStorage
     const savedFormData = localStorage.getItem("formData");
@@ -166,7 +166,11 @@ export default function FormContent({
                 <Controller
                   name={field.prop}
                   control={control}
-                  rules={{ required: field.validation?.required }}
+                  rules={{
+                    required: field.validation?.required,
+                    minLength: field.validation?.minLength,
+                    min: field.validation?.min,
+                  }}
                   render={({ field: controllerField }) => (
                     <input
                       {...controllerField}
@@ -256,8 +260,14 @@ export default function FormContent({
                   />
                 )}
 
-              {errors[field.prop] && (
+              {errors[field.prop]?.type === "required" && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
+              )}
+              {errors[field.prop]?.type === "minLength" && (
+                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.minLength} characters`}</p>
+              )}
+              {errors[field.prop]?.type === "min" && (
+                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.min}`}</p>
               )}
             </div>
           ))}

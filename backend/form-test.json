@@ -108,5 +108,19 @@
           }
         }
       ]
+    },
+    {
+      "title": "Step 3",
+      "fields": [
+        {
+          "prop": "country",
+          "label": "Country",
+          "placeholder": "Example: Georgia",
+          "type": "input",
+          "subType": "string",
+          "validation": { "type": "string" }
+        }
+        
+      ]
     }
   ]
