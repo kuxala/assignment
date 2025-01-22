@@ -60,7 +60,7 @@
           "placeholder": "Example: 18",
           "type": "input",
           "subType": "number",
-          "validation": { "type": "number", "min": 18 }
+          "validation": { "type": "number", "min": 18,  "required": true }
         },
         {
           "prop": "mail",

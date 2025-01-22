@@ -212,7 +212,7 @@ export default function FormContent({
                             <input
                               {...customInputField}
                               type="text"
-                              placeholder={field.customInput?.placeholder}
+                              placeholder={field.customInput?.placeholder || ""}
                               className="border p-2 w-full mt-2"
                             />
                           )}

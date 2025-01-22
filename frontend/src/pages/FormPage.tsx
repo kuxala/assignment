@@ -3,6 +3,7 @@ import FormSidebar from "../components/FormSidebar";
 import FormContent from "../components/FormContent";
 import { Toaster } from "react-hot-toast";
 import { Step } from "../types/types";
+import { fetchFormStructure, fetchCities, fetchSchools } from "../utils/api";
 
 export default function FormPage() {
   const [formStructure, setFormStructure] = useState<Step[] | null>(null);
@@ -13,35 +14,40 @@ export default function FormPage() {
   const [selectedSchool, setSelectedSchool] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  // Fetch form data from the backend
-  useEffect(() => {
-    fetch("http://localhost:5000/api/form")
-      .then((response) => response.json())
-      .then((data) => setFormStructure(data))
-      .catch((err) => console.error(err));
 
-    // Fetch cities
-    fetch("http://localhost:5000/api/cities")
-      .then((response) => response.json())
-      .then((data) => setCities(data))
-      .catch((err) => console.error(err));
+  // Fetch form structure and cities on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const formData = await fetchFormStructure();
+        const cityData = await fetchCities();
+        setFormStructure(formData);
+        setCities(cityData);
+      } catch (error) {
+        console.error("Error fetching data", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
+  // Fetch schools whenever selected city changes
   useEffect(() => {
-    // Fetch schools based on the selected city
     if (selectedCity) {
-      fetch(`http://localhost:5000/api/schools?cityId=${selectedCity}`)
-        .then((response) => response.json())
-        .then((data) => setSchools(data))
-        .catch((err) => console.error(err));
+      const fetchSchoolData = async () => {
+        try {
+          const schoolData = await fetchSchools(selectedCity);
+          setSchools(schoolData);
+        } catch (error) {
+          console.error("Error fetching schools", error);
+        }
+      };
+
+      fetchSchoolData();
     }
   }, [selectedCity]);
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/submit");
-  }, []);
   if (isSubmitted) {
-    // Success Page
     return (
       <div className="success-page p-6 w-full text-center">
         <h2 className="text-2xl font-semibold">Thank You!</h2>
@@ -50,6 +56,7 @@ export default function FormPage() {
       </div>
     );
   }
+
   return (
     <div className="flex bg-[#f0f2f5] max-w-[1920px] mx-auto min-h-screen">
       <Toaster />
