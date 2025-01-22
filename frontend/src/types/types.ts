@@ -1,32 +1,61 @@
-// types.ts
-export interface City {
-    id: string;
-    name: string;
-  }
-  
-  export interface School {
-    id: string;
-    name: string;
-    cityId: string;
-  }
-  
-  export interface Field {
-    prop: string;
-    label: string;
+export interface Field {
+  prop: string;
+
+  type: string;
+
+  label: string;
+
+  placeholder?: string;
+
+  subType?: string;
+
+  validation?: {
+    required?: boolean;
+
+    minLength?: number;
+
+    min?: number;
+  };
+
+  customInput?: {
+    placeholder: string;
+
     validation?: {
-      type: string;
-      minLength?: number;
-      min?: number;
       required?: boolean;
-      validValues?: boolean[];
+
+      minLength?: number;
     };
-  }
-  
-  export interface Step {
-    fields: Field[];
-  }
-  
-  export interface FormStructure {
-    steps: Step[];
-  }
-  
+  };
+
+  customInputOption?: string;
+}
+
+export type Step = {
+  title: string;
+  fields: Field[];
+};
+
+export type City = {
+  id: string;
+  name: string;
+};
+
+export type School = {
+  id: string;
+  name: string;
+};
+
+export interface FormContentProps {
+  step: Step | null;
+  onNextStep: () => void;
+  cities: City[];
+  schools: School[];
+  selectedCity: string;
+  setSelectedCity: React.Dispatch<React.SetStateAction<string>>;
+  selectedSchool: string;
+  setSelectedSchool: React.Dispatch<React.SetStateAction<string>>;
+  selectedStep: number;
+  formStructure: Step[];
+  setIsSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
+  setSuccessMessage: React.Dispatch<React.SetStateAction<string>>;
+}

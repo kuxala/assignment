@@ -1,51 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
-
-type City = {
-  id: string;
-  name: string;
-};
-
-type School = {
-  id: string;
-  name: string;
-};
-
-type Field = {
-  prop: string;
-  label: string;
-  placeholder: string;
-  type: string;
-  subType?: string;
-  validation: {
-    type: string;
-    minLength?: number;
-    required?: boolean;
-    min?: number;
-    validValues?: boolean[];
-  };
-  collection?: string;
-};
-
-type Step = {
-  title: string;
-  fields: Field[];
-};
-
-interface FormContentProps {
-  step: Step | null;
-  onNextStep: () => void;
-  cities: City[];
-  schools: School[];
-  selectedCity: string;
-  setSelectedCity: React.Dispatch<React.SetStateAction<string>>;
-  selectedSchool: string;
-  setSelectedSchool: React.Dispatch<React.SetStateAction<string>>;
-  selectedStep: number;
-  formStructure: Step[];
-  setIsSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { FormContentProps } from "../types/types";
 
 export default function FormContent({
   step,
@@ -59,6 +15,7 @@ export default function FormContent({
   selectedStep,
   formStructure,
   setIsSubmitted,
+  setSuccessMessage,
 }: FormContentProps) {
   const {
     control,
@@ -68,7 +25,6 @@ export default function FormContent({
   } = useForm();
 
   const [formData, setFormData] = useState<Record<string, any>>({});
-  console.log("Data sent to backend: ", formData);
   useEffect(() => {
     // Check if there's any saved form data in localStorage
     const savedFormData = localStorage.getItem("formData");
@@ -121,8 +77,6 @@ export default function FormContent({
       return acc;
     }, {} as Record<string, any>);
 
-    console.log("Submitting final data to backend:", convertedData);
-
     try {
       const response = await fetch("http://localhost:5000/api/submit", {
         method: "POST",
@@ -136,8 +90,8 @@ export default function FormContent({
 
       if (response.ok) {
         toast.success("Form submitted successfully!");
-        console.log("Backend response:", result);
         setIsSubmitted(true);
+        setSuccessMessage(result.message);
         localStorage.removeItem("formData");
       } else {
         console.error("Backend validation errors:", result.errors);
@@ -218,26 +172,53 @@ export default function FormContent({
                   name={field.prop}
                   control={control}
                   rules={{ required: field.validation?.required }}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="border p-2 w-full"
-                      value={selectedCity ? selectedSchool : ""}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        setSelectedSchool(e.target.value);
-                      }}
-                    >
-                      <option value="">
-                        {step.fields.find((f) => f.prop === "school")
-                          ?.placeholder || "Select a school"}
-                      </option>
-                      {schools.map((school) => (
-                        <option key={school.id} value={school.id}>
-                          {school.name}
+                  render={({ field: selectField }) => (
+                    <>
+                      {/* Dropdown for Schools */}
+                      <select
+                        {...selectField}
+                        className="border p-2 w-full"
+                        value={selectedSchool}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          selectField.onChange(value);
+                          setSelectedSchool(value);
+                        }}
+                      >
+                        <option value="">
+                          {step.fields.find((f) => f.prop === "school")
+                            ?.placeholder || "Select a school"}
                         </option>
-                      ))}
-                    </select>
+                        {schools.map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}
+                          </option>
+                        ))}
+                        <option value="custom">
+                          {field.customInputOption}
+                        </option>
+                      </select>
+
+                      {/* Custom Input for School Name */}
+                      {selectedSchool === "custom" && field.customInput && (
+                        <Controller
+                          name="school"
+                          control={control}
+                          rules={{
+                            required: field.customInput.validation?.required,
+                            minLength: field.customInput.validation?.minLength,
+                          }}
+                          render={({ field: customInputField }) => (
+                            <input
+                              {...customInputField}
+                              type="text"
+                              placeholder={field.customInput?.placeholder}
+                              className="border p-2 w-full mt-2"
+                            />
+                          )}
+                        />
+                      )}
+                    </>
                   )}
                 />
               )}
@@ -265,10 +246,11 @@ export default function FormContent({
               {errors[field.prop]?.type === "required" && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
               )}
-              {errors[field.prop]?.type === "minLength" && (
-                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.minLength} characters`}</p>
-              )}
-              {errors[field.prop]?.type === "min" && (
+              {errors[field.prop]?.type === "minLength" &&
+                field.validation?.minLength && (
+                  <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.minLength} characters`}</p>
+                )}
+              {errors[field.prop]?.type === "min" && field.validation?.min && (
                 <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.min}`}</p>
               )}
             </div>

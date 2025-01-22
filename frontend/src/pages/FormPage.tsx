@@ -2,36 +2,7 @@ import { useEffect, useState } from "react";
 import FormSidebar from "../components/FormSidebar";
 import FormContent from "../components/FormContent";
 import { Toaster } from "react-hot-toast";
-
-type Field = {
-  prop: string;
-  label: string;
-  placeholder: string;
-  type: string;
-  subType?: string;
-  validation: {
-    type: string;
-    minLength?: number;
-    required?: boolean;
-    min?: number;
-    validValues?: boolean[];
-  };
-  collection?: string; // For select options
-  customInput?: {
-    label: string;
-    placeholder: string;
-    validation: {
-      type: string;
-      minLength?: number;
-      required: boolean;
-    };
-  };
-};
-
-type Step = {
-  title: string;
-  fields: Field[];
-};
+import { Step } from "../types/types";
 
 export default function FormPage() {
   const [formStructure, setFormStructure] = useState<Step[] | null>(null);
@@ -41,6 +12,7 @@ export default function FormPage() {
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [selectedSchool, setSelectedSchool] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   // Fetch form data from the backend
   useEffect(() => {
     fetch("http://localhost:5000/api/form")
@@ -73,7 +45,7 @@ export default function FormPage() {
     return (
       <div className="success-page p-6 w-full text-center">
         <h2 className="text-2xl font-semibold">Thank You!</h2>
-        <p className="mt-4">Your form has been successfully submitted.</p>
+        <p className="mt-4">{successMessage}</p>
         <p className="mt-2">We will get back to you shortly.</p>
       </div>
     );
@@ -98,6 +70,7 @@ export default function FormPage() {
         selectedStep={selectedStep}
         formStructure={formStructure || []}
         setIsSubmitted={setIsSubmitted}
+        setSuccessMessage={setSuccessMessage}
       />
     </div>
   );
