@@ -94,7 +94,7 @@
           "placeholder": "",
           "type": "input",
           "subType": "password",
-          "validation": { "type": "number", "min": 8, "required": true }
+          "validation": { "type": "string", "min": 8, "required": true }
         },
         {
           "prop": "termsAndConditions",

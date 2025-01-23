@@ -1,7 +1,11 @@
+// External imports
 import { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
+
+// Internal imports
 import { FormContentProps } from "../types/types";
+import { submitFormData } from "../utils/api";
 
 export default function FormContent({
   step,
@@ -25,87 +29,160 @@ export default function FormContent({
   } = useForm();
 
   const [formData, setFormData] = useState<Record<string, any>>({});
+
+  // Handle localStorage data
   useEffect(() => {
-    // Check if there's any saved form data in localStorage
     const savedFormData = localStorage.getItem("formData");
     if (savedFormData) {
       const parsedData = JSON.parse(savedFormData);
       setFormData(parsedData);
-
-      // Pre-fill form fields from saved data
-      Object.keys(parsedData).forEach((key) => {
-        setValue(key, parsedData[key]);
-      });
+      Object.keys(parsedData).forEach((key) => setValue(key, parsedData[key]));
     }
   }, [setValue]);
 
+  // Handle city selection reset
+  useEffect(() => {
+    setSelectedSchool("");
+  }, [selectedCity, setSelectedSchool]);
+
   const onSubmit: SubmitHandler<any> = (data) => {
     const currentData = { ...data };
-    setFormData((prev) => ({ ...prev, ...currentData }));
+    const updatedFormData = { ...formData, ...currentData };
 
-    // Save the current form data to localStorage
-    localStorage.setItem(
-      "formData",
-      JSON.stringify({ ...formData, ...currentData })
-    );
+    setFormData(updatedFormData);
+    localStorage.setItem("formData", JSON.stringify(updatedFormData));
 
     if (selectedStep === formStructure.length - 1) {
-      // Submit all data to the backend
-      handleFinalSubmit({ ...formData, ...currentData });
+      handleFinalSubmit(updatedFormData);
     } else {
-      // Proceed to the next step
       onNextStep();
     }
   };
 
   const handleFinalSubmit = async (data: Record<string, any>) => {
-    // Convert string fields to numbers before submitting
-    const convertedData = Object.keys(data).reduce((acc, key) => {
-      const value = data[key];
-
-      // Skip conversion for termsAndConditions field (boolean value)
-      if (key === "termsAndConditions") {
-        acc[key] = value;
-      }
-      // Check if the value can be converted to a number and convert it
-      else if (!isNaN(value) && value !== "") {
-        acc[key] = parseFloat(value); // Use parseInt for integers if needed
-      } else {
-        acc[key] = value; // Keep the value as is if it cannot be converted
-      }
-
-      return acc;
-    }, {} as Record<string, any>);
-
     try {
-      const response = await fetch("http://localhost:5000/api/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(convertedData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success("Form submitted successfully!");
-        setIsSubmitted(true);
-        setSuccessMessage(result.message);
-        localStorage.removeItem("formData");
-      } else {
-        console.error("Backend validation errors:", result.errors);
-        toast.error("Submission failed: " + JSON.stringify(result.errors));
-      }
-    } catch (error) {
+      const result = await submitFormData(data);
+      toast.success("Form submitted successfully!");
+      setIsSubmitted(true);
+      setSuccessMessage(result.message);
+      localStorage.removeItem("formData");
+    } catch (error: any) {
       console.error("Error during form submission:", error);
-      toast.error("An error occurred while submitting the form.");
+      toast.error("Submission failed: " + error.message);
     }
   };
 
-  useEffect(() => {
-    setSelectedSchool("");
-  }, [selectedCity, setSelectedSchool]);
+  const renderField = (field: any) => {
+    const validationRules = {
+      required: field.validation?.required,
+      minLength: field.validation?.minLength,
+      min: field.validation?.min,
+    };
+
+    switch (field.type) {
+      case "input":
+        return (
+          <Controller
+            name={field.prop}
+            control={control}
+            rules={validationRules}
+            render={({ field: controllerField }) => (
+              <input
+                {...controllerField}
+                type={field.subType || "text"}
+                placeholder={field.placeholder}
+                className="border p-2 w-full"
+              />
+            )}
+          />
+        );
+
+      case "select":
+        return renderSelectField(field);
+
+      case "checkbox":
+        return (
+          <Controller
+            name={field.prop}
+            control={control}
+            rules={{ required: true }}
+            render={({ field: controllerField }) => (
+              <div className="flex items-center">
+                <input
+                  {...controllerField}
+                  type="checkbox"
+                  id="terms"
+                  className="mr-2"
+                />
+                <label htmlFor="terms">{field.label}</label>
+              </div>
+            )}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const renderSelectField = (field: any) => {
+    const isCity = field.prop === "city";
+    const isSchool = field.prop === "school";
+
+    return (
+      <Controller
+        name={field.prop}
+        control={control}
+        rules={{ required: field.validation?.required }}
+        render={({ field: controllerField }) => (
+          <>
+            <select
+              {...controllerField}
+              className="border p-2 w-full"
+              value={isCity ? selectedCity : selectedSchool}
+              onChange={(e) => {
+                const value = e.target.value;
+                controllerField.onChange(value);
+                isCity && setSelectedCity(value);
+                isSchool && setSelectedSchool(value);
+              }}
+            >
+              <option value="">
+                {field.placeholder || "Select an option"}
+              </option>
+              {(isCity ? cities : schools).map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+              {isSchool && field.customInputOption && (
+                <option value="custom">{field.customInputOption}</option>
+              )}
+            </select>
+
+            {isSchool && selectedSchool === "custom" && field.customInput && (
+              <Controller
+                name="school"
+                control={control}
+                rules={{
+                  required: field.customInput.validation?.required,
+                  minLength: field.customInput.validation?.minLength,
+                }}
+                render={({ field: customField }) => (
+                  <input
+                    {...customField}
+                    type="text"
+                    placeholder={field.customInput.placeholder || ""}
+                    className="border p-2 w-full mt-2"
+                  />
+                )}
+              />
+            )}
+          </>
+        )}
+      />
+    );
+  };
 
   return (
     <div className="form-content p-6 w-full">
@@ -117,141 +194,15 @@ export default function FormContent({
               {field.type !== "checkbox" && (
                 <label className="block">{field.label}</label>
               )}
-
-              {field.type === "input" && (
-                <Controller
-                  name={field.prop}
-                  control={control}
-                  rules={{
-                    required: field.validation?.required,
-                    minLength: field.validation?.minLength,
-                    min: field.validation?.min,
-                  }}
-                  render={({ field: controllerField }) => (
-                    <input
-                      {...controllerField}
-                      type={field.subType || "text"}
-                      placeholder={field.placeholder}
-                      className="border p-2 w-full"
-                    />
-                  )}
-                />
-              )}
-
-              {field.type === "select" && field.prop === "city" && (
-                <Controller
-                  name={field.prop}
-                  control={control}
-                  rules={{ required: field.validation?.required }}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="border p-2 w-full"
-                      value={selectedCity}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        setSelectedCity(e.target.value);
-                      }}
-                    >
-                      <option value="">
-                        {step.fields.find((f) => f.prop === "city")
-                          ?.placeholder || "Select a city"}
-                      </option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              )}
-
-              {field.type === "select" && field.prop === "school" && (
-                <Controller
-                  name={field.prop}
-                  control={control}
-                  rules={{ required: field.validation?.required }}
-                  render={({ field: selectField }) => (
-                    <>
-                      {/* Dropdown for Schools */}
-                      <select
-                        {...selectField}
-                        className="border p-2 w-full"
-                        value={selectedSchool}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          selectField.onChange(value);
-                          setSelectedSchool(value);
-                        }}
-                      >
-                        <option value="">
-                          {step.fields.find((f) => f.prop === "school")
-                            ?.placeholder || "Select a school"}
-                        </option>
-                        {schools.map((school) => (
-                          <option key={school.id} value={school.id}>
-                            {school.name}
-                          </option>
-                        ))}
-                        <option value="custom">
-                          {field.customInputOption}
-                        </option>
-                      </select>
-
-                      {/* Custom Input for School Name */}
-                      {selectedSchool === "custom" && field.customInput && (
-                        <Controller
-                          name="school"
-                          control={control}
-                          rules={{
-                            required: field.customInput.validation?.required,
-                            minLength: field.customInput.validation?.minLength,
-                          }}
-                          render={({ field: customInputField }) => (
-                            <input
-                              {...customInputField}
-                              type="text"
-                              placeholder={field.customInput?.placeholder || ""}
-                              className="border p-2 w-full mt-2"
-                            />
-                          )}
-                        />
-                      )}
-                    </>
-                  )}
-                />
-              )}
-
-              {field.type === "checkbox" &&
-                field.prop === "termsAndConditions" && (
-                  <Controller
-                    name={field.prop}
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field: controllerField }) => (
-                      <div className="flex items-center">
-                        <input
-                          {...controllerField}
-                          type="checkbox"
-                          id="terms"
-                          className="mr-2"
-                        />
-                        <label htmlFor="terms">{field.label}</label>
-                      </div>
-                    )}
-                  />
-                )}
-
+              {renderField(field)}
               {errors[field.prop]?.type === "required" && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
               )}
-              {errors[field.prop]?.type === "minLength" &&
-                field.validation?.minLength && (
-                  <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.minLength} characters`}</p>
-                )}
-              {errors[field.prop]?.type === "min" && field.validation?.min && (
-                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation.min}`}</p>
+              {errors[field.prop]?.type === "minLength" && (
+                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation?.minLength} characters`}</p>
+              )}
+              {errors[field.prop]?.type === "min" && (
+                <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation?.min}`}</p>
               )}
             </div>
           ))}

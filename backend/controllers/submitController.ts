@@ -1,4 +1,5 @@
 import formStructure from '../data/form.json';
+// import formStructure from '../data/form-test.json';
 
 const validateField = (field: any, value: any, errors: Record<string, string>) => {
   const { prop, label, validation } = field;

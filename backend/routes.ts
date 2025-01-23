@@ -3,7 +3,7 @@ import cities from './data/cities.json';
 import formStructure from './data/form.json';
 import { getSchools } from './controllers/schoolController';
 import { submitForm } from './controllers/submitController';
-// import formStructure from './form-test.json';
+// import formStructure from './data/form-test.json';
 const router = Router();
 
 
