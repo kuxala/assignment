@@ -1,33 +1,16 @@
 export interface Field {
   prop: string;
-
-  type: string;
-
   label: string;
-
+  type: string;
   placeholder?: string;
-
-  subType?: string;
-
+  options?: string[];
+  defaultValue?: string;
   validation?: {
-    required?: boolean;
-
+    required: boolean;
+    type?: string;
     minLength?: number;
-
     min?: number;
   };
-
-  customInput?: {
-    placeholder: string;
-
-    validation?: {
-      required?: boolean;
-
-      minLength?: number;
-    };
-  };
-
-  customInputOption?: string;
 }
 
 export type Step = {
@@ -58,4 +41,7 @@ export interface FormContentProps {
   formStructure: Step[];
   setIsSubmitted: React.Dispatch<React.SetStateAction<boolean>>;
   setSuccessMessage: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedStep: React.Dispatch<React.SetStateAction<number>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }

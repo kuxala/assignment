@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es2020", // Or a higher version as needed (e.g., "es2022")
+    "module": "NodeNext", 
+    "outDir": "dist", // Output directory for compiled JavaScript files
+    "sourceMap": true, 
+    "strict": true, // Enable strict type checking
+    "esModuleInterop": true, // Enable interoperability between CommonJS and ES modules
+    "resolveJsonModule": true, // Allow importing JSON files
+    "skipLibCheck": true // Skip type checking for external libraries
+  }
+}

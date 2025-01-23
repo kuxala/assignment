@@ -14,6 +14,7 @@ export default function FormPage() {
   const [selectedSchool, setSelectedSchool] = useState<string>("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Fetch form structure and cities on mount
   useEffect(() => {
@@ -74,10 +75,13 @@ export default function FormPage() {
         selectedSchool={selectedSchool}
         setSelectedSchool={setSelectedSchool}
         onNextStep={() => setSelectedStep((prev) => prev + 1)}
+        setSelectedStep={setSelectedStep}
         selectedStep={selectedStep}
         formStructure={formStructure || []}
         setIsSubmitted={setIsSubmitted}
         setSuccessMessage={setSuccessMessage}
+        loading={loading}
+        setLoading={setLoading}
       />
     </div>
   );

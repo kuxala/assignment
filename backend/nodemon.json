@@ -1,0 +1,11 @@
+{
+    "watch": [
+      "src/**/*.ts",
+      "server.ts",
+      "routes/**/*.ts",
+      "data/form.json"
+    ],
+    "ext": "ts,json",
+    "exec": "node --loader ts-node/esm server.ts",
+    "verbose": true
+  }

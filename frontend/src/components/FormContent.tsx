@@ -1,5 +1,5 @@
 // External imports
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
 
@@ -20,17 +20,30 @@ export default function FormContent({
   formStructure,
   setIsSubmitted,
   setSuccessMessage,
+  setSelectedStep,
+  loading,
+  setLoading,
 }: FormContentProps) {
   const {
     control,
     handleSubmit,
     formState: { errors },
     setValue,
+    setError,
   } = useForm();
 
   const [formData, setFormData] = useState<Record<string, any>>({});
 
-  // Handle localStorage data
+  // Create the inputRefs ref using useRef
+  const inputRefs = useRef<
+    Record<string, HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  >({});
+
+  // Handle city selection reset
+  useEffect(() => {
+    setSelectedSchool("");
+  }, [selectedCity, setSelectedSchool]);
+
   useEffect(() => {
     const savedFormData = localStorage.getItem("formData");
     if (savedFormData) {
@@ -38,12 +51,14 @@ export default function FormContent({
       setFormData(parsedData);
       Object.keys(parsedData).forEach((key) => setValue(key, parsedData[key]));
     }
-  }, [setValue]);
-
-  // Handle city selection reset
-  useEffect(() => {
-    setSelectedSchool("");
-  }, [selectedCity, setSelectedSchool]);
+    if (step?.fields) {
+      step.fields.forEach((field) => {
+        if (field.type === "checkbox" && field.defaultValue !== undefined) {
+          setValue(field.prop, field.defaultValue);
+        }
+      });
+    }
+  }, [setValue, step]);
 
   const onSubmit: SubmitHandler<any> = (data) => {
     const currentData = { ...data };
@@ -68,9 +83,50 @@ export default function FormContent({
       localStorage.removeItem("formData");
     } catch (error: any) {
       console.error("Error during form submission:", error);
-      toast.error("Submission failed: " + error.message);
+
+      if (typeof error.message === "string") {
+        try {
+          const serverErrors = JSON.parse(error.message);
+
+          Object.keys(serverErrors).forEach((key) => {
+            setError(key, {
+              type: "manual",
+              message: serverErrors[key],
+            });
+          });
+
+          // Find the step with the first error
+          const firstErrorKey = Object.keys(serverErrors)[0];
+          const stepWithError = formStructure.findIndex((step) =>
+            step.fields.some((field) => field.prop === firstErrorKey)
+          );
+
+          // Go back to the step with the error
+          if (stepWithError !== -1) {
+            setSelectedStep(stepWithError);
+          }
+
+          // Focus on the first field with an error (if found)
+          if (firstErrorKey && inputRefs.current[firstErrorKey]) {
+            inputRefs.current[firstErrorKey].focus();
+          }
+        } catch (parseError) {
+          console.error("Error parsing server error message:", parseError);
+        }
+      } else {
+        toast.error("Submission failed: " + error.message);
+      }
     }
   };
+
+  // Function to register input refs
+  const registerRef =
+    (field: any) =>
+    (el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null) => {
+      if (el) {
+        inputRefs.current[field.prop] = el;
+      }
+    };
 
   const renderField = (field: any) => {
     const validationRules = {
@@ -89,6 +145,7 @@ export default function FormContent({
             render={({ field: controllerField }) => (
               <input
                 {...controllerField}
+                ref={registerRef(field)} // Pass field to registerRef
                 type={field.subType || "text"}
                 placeholder={field.placeholder}
                 className="border p-2 w-full"
@@ -110,11 +167,13 @@ export default function FormContent({
               <div className="flex items-center">
                 <input
                   {...controllerField}
+                  ref={registerRef(field)} // Pass field to registerRef
                   type="checkbox"
-                  id="terms"
+                  id={field.prop}
                   className="mr-2"
+                  checked={controllerField.value}
                 />
-                <label htmlFor="terms">{field.label}</label>
+                <label htmlFor={field.prop}>{field.label}</label>
               </div>
             )}
           />
@@ -138,6 +197,7 @@ export default function FormContent({
           <>
             <select
               {...controllerField}
+              ref={registerRef(field)} // Pass field to registerRef
               className="border p-2 w-full"
               value={isCity ? selectedCity : selectedSchool}
               onChange={(e) => {
@@ -171,6 +231,7 @@ export default function FormContent({
                 render={({ field: customField }) => (
                   <input
                     {...customField}
+                    ref={registerRef(field)} // Pass field to registerRef
                     type="text"
                     placeholder={field.customInput.placeholder || ""}
                     className="border p-2 w-full mt-2"
@@ -195,6 +256,7 @@ export default function FormContent({
                 <label className="block">{field.label}</label>
               )}
               {renderField(field)}
+              {/* Display errors */}
               {errors[field.prop]?.type === "required" && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
               )}
@@ -204,9 +266,18 @@ export default function FormContent({
               {errors[field.prop]?.type === "min" && (
                 <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation?.min}`}</p>
               )}
+              {errors[field.prop]?.type === "manual" && (
+                <p className="text-red-500 text-sm">{`${
+                  errors[field.prop]?.message
+                }`}</p>
+              )}
             </div>
           ))}
-          <button type="submit" className="bg-blue-600 text-white p-2 rounded">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white p-2 rounded"
+            disabled={loading}
+          >
             {selectedStep === formStructure.length - 1 ? "Submit" : "Next Step"}
           </button>
         </form>

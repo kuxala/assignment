@@ -1,5 +1,12 @@
-import formStructure from '../data/form.json';
+import formStructure from '../data/form.json' assert { type: "json" };
 // import formStructure from '../data/form-test.json';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// Dynamically define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const validateField = (field: any, value: any, errors: Record<string, string>) => {
   const { prop, label, validation } = field;
@@ -79,4 +86,20 @@ export const submitForm = (req: { body: any }, res: { json: (data: any) => void,
 
   // If no errors, respond with success
   return res.status(200).json({ success: true, message: 'Form validated successfully.' });
+};
+
+const getFormStructureData = (): any => {
+  const formFilePath = path.join(__dirname, '../data/form.json'); // Adjust path as needed
+  try {
+    const fileContent = fs.readFileSync(formFilePath, 'utf-8');
+    return JSON.parse(fileContent);
+  } catch (error) {
+    console.error("Error reading or parsing form.json:", error);
+    return null; // Or handle the error in a way that makes sense for your app
+  }
+};
+
+export const getFormStructure = (req: any, res: { json: (arg0: any) => void }): void => {
+  const formStructure = getFormStructureData();
+  res.json(formStructure);
 };
