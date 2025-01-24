@@ -22,7 +22,6 @@ export default function FormContent({
   setSuccessMessage,
   setSelectedStep,
   loading,
-  setLoading,
 }: FormContentProps) {
   const {
     control,

@@ -30,15 +30,7 @@
           "allowCustomInput": false,
           "validation": { "type": "number", "required": true }
         },
-        {
-          "prop": "country",
-          "label": "Country",
-          "placeholder": "Choose country",
-          "type": "select",
-          "collection": "countries",
-          "allowCustomInput": false,
-          "validation": { "type": "number", "required": true }
-        },
+       
         {
           "prop": "school",
           "label": "School",
