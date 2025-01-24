@@ -21,6 +21,8 @@ export default function FormContent({
   setIsSubmitted,
   setSuccessMessage,
   setSelectedStep,
+  loading,
+  setLoading,
   setFormStructure,
 }: FormContentProps) {
   const {
@@ -75,11 +77,28 @@ export default function FormContent({
     } catch (error: any) {
       console.error("Error during form submission:", error);
 
-      // If the error contains a server-side message, handle it
+      // If the error contains a message string, process it
       if (typeof error.message === "string") {
         try {
           const serverErrors = JSON.parse(error.message);
 
+          // Check if the server instructs to refetch the form structure
+          if (serverErrors.needsRefetch) {
+            console.log("Refetching form structure due to backend changes...");
+            try {
+              const updatedFormStructure = await fetchFormStructure();
+              setFormStructure(updatedFormStructure);
+              toast("Form structure updated. Please review and resubmit.");
+            } catch (refetchError) {
+              console.error("Error refetching form structure:", refetchError);
+              toast.error(
+                "Failed to refetch form structure. Please try again later."
+              );
+            }
+            return; // Exit early after refetch
+          }
+
+          // Set field-specific errors
           Object.keys(serverErrors).forEach((key) => {
             setError(key, {
               type: "manual",
@@ -87,13 +106,12 @@ export default function FormContent({
             });
           });
 
-          // Identify the step with the first error
+          // Navigate to the step with the first error
           const firstErrorKey = Object.keys(serverErrors)[0];
           const stepWithError = formStructure.findIndex((step) =>
             step.fields.some((field) => field.prop === firstErrorKey)
           );
 
-          // Navigate to the step with the error
           if (stepWithError !== -1) {
             setSelectedStep(stepWithError);
           }
@@ -102,12 +120,6 @@ export default function FormContent({
           if (firstErrorKey && inputRefs.current[firstErrorKey]) {
             inputRefs.current[firstErrorKey].focus();
           }
-
-          // Refetch the form structure if the backend has changed
-          console.log("Refetching form structure due to backend updates...");
-          const updatedFormStructure = await fetchFormStructure();
-          setFormStructure(updatedFormStructure);
-          toast("Form structure has been updated. Please review the changes.");
         } catch (parseError) {
           console.error("Error parsing server error message:", parseError);
           toast.error(
@@ -115,6 +127,7 @@ export default function FormContent({
           );
         }
       } else {
+        // General error message for unexpected cases
         toast.error("Submission failed: " + error.message);
       }
     }
@@ -258,23 +271,27 @@ export default function FormContent({
               )}
               {renderField(field)}
               {/* Display errors */}
-              {errors[field.prop]?.type === "required" && (
+              {errors[field?.prop]?.type === "required" && (
                 <p className="text-red-500 text-sm">{`${field.label} is required`}</p>
               )}
-              {errors[field.prop]?.type === "minLength" && (
+              {errors[field?.prop]?.type === "minLength" && (
                 <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation?.minLength} characters`}</p>
               )}
-              {errors[field.prop]?.type === "min" && (
+              {errors[field?.prop]?.type === "min" && (
                 <p className="text-red-500 text-sm">{`${field.label} must be at least ${field.validation?.min}`}</p>
               )}
-              {errors[field.prop]?.type === "manual" && (
+              {errors[field?.prop]?.type === "manual" && (
                 <p className="text-red-500 text-sm">{`${
                   errors[field.prop]?.message
                 }`}</p>
               )}
             </div>
           ))}
-          <button type="submit" className="bg-blue-600 text-white p-2 rounded">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white p-2 rounded"
+            disabled={loading}
+          >
             {selectedStep === formStructure.length - 1 ? "Submit" : "Next Step"}
           </button>
         </form>
