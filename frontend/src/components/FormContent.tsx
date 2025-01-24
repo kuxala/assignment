@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 // Internal imports
 import { FormContentProps } from "../types/types";
-import { submitFormData } from "../utils/api";
+import { fetchFormStructure, submitFormData } from "../utils/api";
 
 export default function FormContent({
   step,
@@ -21,7 +21,7 @@ export default function FormContent({
   setIsSubmitted,
   setSuccessMessage,
   setSelectedStep,
-  loading,
+  setFormStructure,
 }: FormContentProps) {
   const {
     control,
@@ -44,12 +44,6 @@ export default function FormContent({
   }, [selectedCity, setSelectedSchool]);
 
   useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      const parsedData = JSON.parse(savedFormData);
-      setFormData(parsedData);
-      Object.keys(parsedData).forEach((key) => setValue(key, parsedData[key]));
-    }
     if (step?.fields) {
       step.fields.forEach((field) => {
         if (field.type === "checkbox" && field.defaultValue !== undefined) {
@@ -64,7 +58,6 @@ export default function FormContent({
     const updatedFormData = { ...formData, ...currentData };
 
     setFormData(updatedFormData);
-    localStorage.setItem("formData", JSON.stringify(updatedFormData));
 
     if (selectedStep === formStructure.length - 1) {
       handleFinalSubmit(updatedFormData);
@@ -79,10 +72,10 @@ export default function FormContent({
       toast.success("Form submitted successfully!");
       setIsSubmitted(true);
       setSuccessMessage(result.message);
-      localStorage.removeItem("formData");
     } catch (error: any) {
       console.error("Error during form submission:", error);
 
+      // If the error contains a server-side message, handle it
       if (typeof error.message === "string") {
         try {
           const serverErrors = JSON.parse(error.message);
@@ -94,23 +87,32 @@ export default function FormContent({
             });
           });
 
-          // Find the step with the first error
+          // Identify the step with the first error
           const firstErrorKey = Object.keys(serverErrors)[0];
           const stepWithError = formStructure.findIndex((step) =>
             step.fields.some((field) => field.prop === firstErrorKey)
           );
 
-          // Go back to the step with the error
+          // Navigate to the step with the error
           if (stepWithError !== -1) {
             setSelectedStep(stepWithError);
           }
 
-          // Focus on the first field with an error (if found)
+          // Focus on the first field with an error
           if (firstErrorKey && inputRefs.current[firstErrorKey]) {
             inputRefs.current[firstErrorKey].focus();
           }
+
+          // Refetch the form structure if the backend has changed
+          console.log("Refetching form structure due to backend updates...");
+          const updatedFormStructure = await fetchFormStructure();
+          setFormStructure(updatedFormStructure);
+          toast("Form structure has been updated. Please review the changes.");
         } catch (parseError) {
           console.error("Error parsing server error message:", parseError);
+          toast.error(
+            "Unexpected error occurred while processing server errors."
+          );
         }
       } else {
         toast.error("Submission failed: " + error.message);
@@ -272,11 +274,7 @@ export default function FormContent({
               )}
             </div>
           ))}
-          <button
-            type="submit"
-            className="bg-blue-600 text-white p-2 rounded"
-            disabled={loading}
-          >
+          <button type="submit" className="bg-blue-600 text-white p-2 rounded">
             {selectedStep === formStructure.length - 1 ? "Submit" : "Next Step"}
           </button>
         </form>

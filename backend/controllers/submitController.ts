@@ -61,15 +61,7 @@ const validateFormData = (formData: any) => {
   });
 
   // Check for unexpected fields in formData
-  Object.keys(formData).forEach((key) => {
-    const fieldExists = formStructure.some((step) =>
-      step.fields.some((field) => field.prop === key)
-    );
-
-    if (!fieldExists) {
-      errors[key] = `Unexpected field: ${key}`;
-    }
-  });
+ 
 
   return errors;
 };

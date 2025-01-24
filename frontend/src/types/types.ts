@@ -44,4 +44,5 @@ export interface FormContentProps {
   setSelectedStep: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setFormStructure: React.Dispatch<React.SetStateAction<Step[] | null>>;
 }
