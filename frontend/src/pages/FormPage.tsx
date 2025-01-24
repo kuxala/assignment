@@ -23,7 +23,6 @@ export default function FormPage() {
       try {
         setLoading(true);
         const formData = await fetchFormStructure();
-        console.log(formData);
         const cityData = await fetchCities();
         setFormStructure(formData);
         setCities(cityData);
