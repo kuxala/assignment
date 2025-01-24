@@ -60,6 +60,7 @@ export default function FormPage() {
       setLoading(true);
       const updatedFormStructure = await fetchFormStructure();
       setFormStructure(updatedFormStructure);
+
       setFetchError(null);
     } catch (error: any) {
       setFetchError(error.message);
